@@ -36,6 +36,7 @@ function AreNotTheSame {
 }
 
 function VerifyFolderToBackup {
+    Write-Host
     Write-Host -Object "=================================================="
     Write-Host -Object "      Verification of the folder to backup"
     Write-Host -Object "=================================================="
@@ -51,6 +52,7 @@ function VerifyFolderToBackup {
 }
 
 function VerifyBackupDestination {
+    Write-Host
     Write-Host -Object "=================================================="
     Write-Host -Object "  Verification of the destination backup folder"
     Write-Host -Object "=================================================="
@@ -101,16 +103,24 @@ function CreateArchiveFilename {
 }
 
 function BackupFolder {
+    Write-Host
     Write-Host -Object "=================================================="
     Write-Host -Object "              Backuping folder"
     Write-Host -Object "=================================================="
     Write-Host -Object "Creating the backup : " -NoNewline
-    Compress-Archive -Path $FolderToBackup -DestinationPath $FullFilename > $null
+
+    # Check if the backup does not already exist
     If (Test-Path -Path $FullFilename) {
-        Write-Host -Object "The folder `"$FullFilename`" exist" -ForegroundColor Green 
+        Write-Host -Object "The backup `"$FullFilename`" already exist." -ForegroundColor Red 
+        Exit
     } Else {
-        Write-Host -Object "The folder `"$FullFilename`" does not exist" -ForegroundColor Red
-        Break
+        Compress-Archive -Path $FolderToBackup -DestinationPath $FullFilename > $null
+        If (Test-Path -Path $FullFilename) {
+            Write-Host -Object "The backup `"$FullFilename`" was created" -ForegroundColor Green 
+        } Else {
+            Write-Host -Object "The backup `"$FullFilename`" does not exist" -ForegroundColor Red
+            Break
+        }
     }
 }
 

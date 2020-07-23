@@ -49,7 +49,7 @@ function SendMail {
     $To = "" # Warning
     $Bcc = "" # Warning
     $Subject = "[Daily report] You have $NbListOfFiles new files since $Date"
-    $Body = ""
+    $Body = "Hello, you will find a file in CSV format attached to this mail, which contains the list of $NbListOfFiles new files since $Date"
     $Attachments = $FullPathFileCSV
 
     $Mail = New-Object System.Net.Mail.MailMessage

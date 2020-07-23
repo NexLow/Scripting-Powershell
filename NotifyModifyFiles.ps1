@@ -15,15 +15,6 @@ function GetListOfFiles {
 }
 
 function SendMail {
-    # $From = "thibault.cholet@outlook.fr"
-    # $To = "thibault.cholet@outlook.fr"
-    # $Subject = "test"
-    # $SmtpServer = "smtp-mail.outlook.com"
-    # $Port = 587
-    # $Body = "test"
-    # $Encoding = "utf8"
-    # $Credential = Get-Credential
-
     # Server configuration
     $SmtpUser = "test@test.test"
     $SmtpPassword = "testpassword"

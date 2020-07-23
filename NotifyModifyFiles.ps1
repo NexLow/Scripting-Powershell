@@ -7,6 +7,105 @@ WIP
 This script was created by NexLow : https://github.com/NexLow
 #>
 
+function StartupMessage {
+    # Write a startup message
+    # Get the name of the script
+    $ScriptName = $($myInvocation.ScriptName).Split("\") | Select-Object -Last 1
+
+    Write-Host -Object "=================================================="
+    Write-Host -Object "Startup : $ScriptName" 
+    Write-Host -Object "=================================================="    
+}
+
+function VerifyTempFolder {
+    # Checking if $TempFolder is valid and correct rewriting
+    Write-Host -Object 'Checking if $TempFolder is valid and correct rewriting : ' -NoNewline
+    If ($null -eq $TempFolder) {
+        Write-Host -Object 'Error ! This script needs a temp folder. Please, enter a valid absolute path for the variable "$TempFolder" and try again.' -ForegroundColor Red
+        Exit
+    } elseif (($TempFolder -eq "") -or ($TempFolder -match " ") -or ($TempFolder -match '^\\') -or ($TempFolder -match '^.\\')) {
+        Write-Host -Object 'Error ! Please, enter a valid absolute path for the variable "$TempFolder" and try again.' -ForegroundColor Red
+        Exit
+    } elseif ($TempFolder -notmatch '\\$') {
+        [Int]$LengthTempFolder = $TempFolder.Length
+        [String]$Script:TempFolder = $TempFolder.Insert($LengthTempFolder,"\")
+    } else {
+        Write-Host -Object "An error has occurred. Please, enter a valid absolute path for the variable `"`$TempFolder`" and try again." -ForegroundColor Red
+        Exit
+    }
+
+    # Test if the path is available 
+    If (Test-Path -Path $TempFolder) { 
+        Write-Host -Object "The temporary folder `"$TempFolder`" exist and is valid." -ForegroundColor Green
+    } else {
+        Write-Host -Object "An error has occurred. Please, enter a valid absolute path for the variable `"`$TempFolder = $TempFolder`" and try again." -ForegroundColor Red
+        Exit
+    }
+}
+
+function VerifyFolderToCheck {
+    # Checking if $FolderToCheck is valid and correct rewriting
+    Write-Host -Object 'Checking if $FolderToCheck is valid and correct rewriting : ' -NoNewline
+    If ($null -eq $FolderToCheck) {
+        Write-Host -Object 'Error ! This script needs a temp folder. Please, enter a valid absolute path for the variable "$FolderToCheck" and try again.' -ForegroundColor Red
+        Exit
+    } elseif (($FolderToCheck -eq "") -or ($FolderToCheck -match " ") -or ($FolderToCheck -match '^\\') -or ($FolderToCheck -match '^.\\')) {
+        Write-Host -Object 'Error ! Please, enter a valid absolute path for the variable "$FolderToCheck" and try again.' -ForegroundColor Red
+        Exit
+    } elseif ($FolderToCheck -notmatch '\\$') {
+        [Int]$LengthFolderToCheck = $FolderToCheck.Length
+        [String]$Script:FolderToCheck = $FolderToCheck.Insert($LengthFolderToCheck,"\")
+    } else {
+        Write-Host -Object "An error has occurred. Please, enter a valid absolute path for the variable `"`$FolderToCheck`" and try again." -ForegroundColor Red
+        Exit
+    }
+
+    # Test if the path is available 
+    If (Test-Path -Path $FolderToCheck) { 
+        Write-Host -Object "The folder `"$FolderToCheck`" exist and is valid." -ForegroundColor Green
+    } else {
+        Write-Host -Object "An error has occurred. Please, enter a valid absolute path for the variable `"`$FolderToCheck = $FolderToCheck`" and try again." -ForegroundColor Red
+        Exit
+    }
+}
+
+function VerifyNbDays {
+    # Check if $NbDays is valid
+    Write-Host -Object 'Checking if $NbDays is valid : ' -NoNewline
+    If ($null -eq $NbDays) {
+        Write-Host -Object 'Error ! The variable $NbDays is empty or null. Please, enter a valid number less than "0" exemple "-1" and try agin.' -ForegroundColor Red
+        Exit
+    } elseif ($NbDays -ige 0) {
+        Write-Host -Object 'Error ! The variable $NbDays has not a valid number. Please, enter a valid number less than "0" exemple "-1" and try agin.' -ForegroundColor Red
+        Exit
+    } else {
+        Write-Host -Object "The number `"$NbDays`" is valid." -ForegroundColor Green
+    }
+}
+
+function AreNotTheSame {
+    # Verification if the $FolderToCheck is the same as $TempFolder
+    Write-Host -Object 'Checking if $FolderToCheck and $TempFolder are not the same : ' -NoNewline
+    If ($FolderToCheck -eq $TempFolder) {
+        Write-Host -Object 'Warning ! The folder $FolderToCheck is the same as $TempFolder.' -ForegroundColor Yellow
+        do {
+            $ContinueAsTheSame = Read-Host -Prompt 'Do you want to continue without changing variables (yes,no) ? '
+            switch ($ContinueAsTheSame.ToLower()) {
+                "yes" { 
+                    Write-Host -Object "No problem, we continue..." -ForegroundColor Green
+                }
+                "no" { 
+                    Write-Host -Object 'So please, enter a different valid absolute path for variables "$FolderToCheck" and "$TempFolder". You can retry after that.' -ForegroundColor Red
+                    Exit
+                }
+                Default { Write-Host -Object "Please, answers correctly..." -ForegroundColor Yellow }
+            }
+        } until (($ContinueAsTheSame -match "yes") -or ($ContinueAsTheSame -match "no"))
+    } else {
+        Write-Host -Object "They are not the same. It is ok." -ForegroundColor Green
+    }
+}
+
 function GetListOfFiles {
     # Create the date variable
     $Script:Date = (Get-Date).AddDays($NbDays)
@@ -69,15 +168,36 @@ function SendMail {
 
 function Main {
     [String]$Script:FolderToCheck = "C:\Temp"
-    [Int]$Script:NbDays = "-1"
+    [Int]$Script:NbDays = "-2"
+    [String]$Script:TempFolder = "C:\Temp"
 
-    #CheckIfTempFolderExist # Not Created
-    GetListOfFiles
-    CreateCSV
-    SendMail
-    #DeleteCSV # Not created
+    # Startup message
+    StartupMessage
+
+    # Setting up variables
+    #SettingUpVariables 
+
+    # Verification of variables
+    VerifyTempFolder
+    VerifyFolderToCheck
+    VerifyNbDays
+    AreNotTheSame
+    Exit
+    # Verification of new file
+    #VerifyIfNewFiles
+
+    # Creating the list
+    #GetListOfFiles
+
+    # Creating the report in CSV
+    #CreateCSV #Verify after creating the csv
+
+    # Send the email
+    #SendMail
+
+    # Delete temp CSV files
+    #DeleteCSV
 }
 
 # Run the script
 Main
-

@@ -41,7 +41,7 @@ function SendMail {
     $SmtpPassword = "" # Warning
     $SmtpServer = "smtp-mail.outlook.com"
     $SmtpPort = "587"
-    $Credentials = New-Object System.Management.Automation.PSCredential -ArgumentList $SmtpUser, $($SmtpPassword | ConvertTo-SecureString -AsPlainText -Force) 
+    #$Credentials = New-Object System.Management.Automation.PSCredential -ArgumentList $SmtpUser, $($SmtpPassword | ConvertTo-SecureString -AsPlainText -Force) 
     
     # Mail configuration
     # The $From must not be an anonymous address. 

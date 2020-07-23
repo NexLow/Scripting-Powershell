@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-Notifies by email the list of modified files.
+Notifies by email the list of modified files since X days.
 .DESCRIPTION
 WIP
 .NOTES

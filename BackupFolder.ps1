@@ -1,11 +1,14 @@
-# This script is in WIP
-
 <#
 .SYNOPSIS
-Backup Files and Folders
+Backup the folder you want with the date in zip format.
+.DESCRIPTION
+WIP
+.NOTES
+This script was created by NexLow : https://github.com/NexLow
 #>
 
-$ErrorActionPreference = 'Inquire'
+# Setting the error action
+$ErrorActionPreference = 'Stop'
 
 function CorrectRewritingOfVariables {
     # Correct rewriting and checking if $FolderToBackup is valid
@@ -126,7 +129,6 @@ function BackupFolder {
 
 function Main {
     [String]$Script:FolderToBackup = "C:\Temp\FolderToBackup"
-    [String]$Script:FilesToBackup = ""
     [String]$Script:BackupDestination = "C:\Temp\BackupDestination"
     CorrectRewritingOfVariables
     AreNotTheSame

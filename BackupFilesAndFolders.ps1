@@ -14,7 +14,7 @@ function CorrectRewritingOfVariables {
         Exit
     } elseif ($FolderToBackup -notmatch '\\$') {
         [Int]$LengthFolderToBackup = $FolderToBackup.Length
-        $FolderToBackup = $FolderToBackup.Insert($LengthFolderToBackup,"\")
+        [String]$Script:FolderToBackup = $FolderToBackup.Insert($LengthFolderToBackup,"\")
     }
 
     # Correct rewriting and checking if $BackupDestination is valid
@@ -23,9 +23,10 @@ function CorrectRewritingOfVariables {
         Exit
     } elseif ($BackupDestination -notmatch '\\$') {
         [Int]$LengthBackupDestination = $BackupDestination.Length
-        $BackupDestination = $BackupDestination.Insert($LengthBackupDestination,"\")
+        [String]$Script:BackupDestination = $BackupDestination.Insert($LengthBackupDestination,"\")
     }
 }
+
 function AreNotTheSame {
     # Verification if the $BackupDestination is the same as $FolderToBackup
     If ($BackupDestination -eq $FolderToBackup) {
@@ -87,26 +88,42 @@ function CreateArchiveFilename {
         Write-Host "Creating Archive Filename : " -NoNewline
         [String]$Date = Get-Date -UFormat %Y-%m-%d # Can be change by : %F
         [String]$Time = Get-Date -UFormat %H-%M
-        [String]$Filename = $Date + "_" + $Time + "_backup" # Name to change
+        [String]$Filename = $Date + "_" + $Time + "_backup.zip" # Name to change
+        [String]$Script:FullFilename = $BackupDestination + $Filename
     }
     Catch {
-        Write-Host -Object "Error" -ForegroundColor Red 
+        Write-Host -Object "An error has occurred. Please, try again." -ForegroundColor Red 
+        Exit
     }
     Finally {
-        Write-Host -Object "Ok" -ForegroundColor Green
+        Write-Host -Object "Ready..." -ForegroundColor Green
+    }
+}
+
+function BackupFolder {
+    Write-Host -Object "=================================================="
+    Write-Host -Object "              Backuping folder"
+    Write-Host -Object "=================================================="
+    Write-Host -Object "Creating the backup : " -NoNewline
+    Compress-Archive -Path $FolderToBackup -DestinationPath $FullFilename > $null
+    If (Test-Path -Path $FullFilename) {
+        Write-Host -Object "The folder `"$FullFilename`" exist" -ForegroundColor Green 
+    } Else {
+        Write-Host -Object "The folder `"$FullFilename`" does not exist" -ForegroundColor Red
+        Break
     }
 }
 
 function Main {
-    [String]$Script:FolderToBackup = "C:\Temp\"
+    [String]$Script:FolderToBackup = "C:\Temp\FolderToBackup"
     [String]$Script:FilesToBackup = ""
-    [String]$Script:BackupDestination = "C:\Temp"
+    [String]$Script:BackupDestination = "C:\Temp\BackupDestination"
     CorrectRewritingOfVariables
-    AreNotTheSame # Not working...
+    AreNotTheSame
     VerifyBackupDestination
     VerifyFolderToBackup
     CreateArchiveFilename
-    
+    BackupFolder
 }
 
 # Run the script

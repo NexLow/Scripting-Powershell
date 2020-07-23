@@ -8,9 +8,20 @@ This script was created by NexLow : https://github.com/NexLow
 #>
 
 function GetListOfFiles {
-    $Script:ListOfAllFiles = Get-ChildItem -Path $Script:FolderToCheck -Include @($Extension) -Recurse
-    Foreach ($Files in $ListOfAllFiles) {
-        Write-Host -Object "$Files"
+    # Create the date variable
+    $Date = (Get-Date).AddDays($NbDays)
+    # Create a list of all files
+    $Script:ListOfAllFiles = Get-ChildItem -Path $FolderToCheck -Recurse -Include "*.*" | Where-Object {$_.CreationTime -ge $Date} | Sort-Object -Property Name
+    # Check if there are any files
+    If ($null -eq $ListOfAllFiles) {
+        Write-Host -Object "No new file since $Date." -ForegroundColor Red
+    } else {
+        # Display list of all files
+        $NbListOfFiles = $ListOfAllFiles | Measure-Object | Select-Object -ExpandProperty Count
+        Write-Host -Object "$NbListOfFiles new files since $Date." -ForegroundColor Green
+        Foreach ($Files in $ListOfAllFiles) {
+            Write-Host -Object "$Files"
+        }
     }
 }
 
@@ -45,10 +56,10 @@ function SendMail {
 }
 
 function Main {
-    [String]$Script:FolderToCheck = "C:\Temp"
-    [String]$Script:Extension = "*.zip", "*.txt"
+    [String]$Script:FolderToCheck = "D:\"
+    [Int]$Script:NbDays = "-1"
     GetListOfFiles
-    SendMail
+    #SendMail
 }
 
 # Run the script

@@ -13,31 +13,44 @@ function SettingUpVariables {
 
     # The path of a temporary folder. It is used to create de CSV report.
     [String]$Script:TempFolder = "C:\Temp"
+    # Number of CSV report to delete in days, exemple : -30 (it delete all files CSV older than 30 days)
+    # Set 0 to delete all CSV report after the end of the script.
+    [Int]$Script:NbDaysDeleteCSVReport = "-0.5"
     # The folder you want to check.
     [String]$Script:FolderToCheck = "C:\Temp"
-    # Lists the files modified since X days
+    # Lists the files modified since -X days
     [Int]$Script:NbDays = "-1"
+    # Name of your CSV reoprt file
+    [String]$Script:NameCSV = "NewFilesDailyReport"
     
 
     # Server mail configuration
-    [String]$Script:SmtpUser = "" # Your email address like : your@address.com
-    [String]$Script:SmtpPassword = "" # Your password of your email address !!! Warning !!!
+    [String]$Script:SmtpUser = "test@test.test" # Your email address like : your@address.com
+    [String]$Script:SmtpPassword = "testpasswordtest#" # Your password of your email address !!! Warning !!!
     [String]$Script:SmtpServer = "smtp-mail.outlook.com" # Your email server
     [String]$Script:SmtpPort = "587" # your port server
-    #$Credentials = New-Object System.Management.Automation.PSCredential -ArgumentList $SmtpUser, $($SmtpPassword | ConvertTo-SecureString -AsPlainText -Force) 
+    #[String]$Script:SmtpPasswordSecure = $($SmtpPassword | ConvertTo-SecureString -AsPlainText -Force) 
 
     # Mail configuration
     # The $From must not be an anonymous address. 
-    [String]$Script:From = "" # Warning
-    [String]$Script:To = "" # Warning
+    [String]$Script:From = "test@test.test" # Warning
+    [String]$Script:To = "test@test.test" # Warning
     [String]$Script:Bcc = "" # Warning
+
+    # Show errors
+    $ErrorActionPreference = 'SilentlyContinue'
+    <#
+    Continue : is the default, and it tells the command to display an error message and continue to run.
+    SilentlyContinue : tells the command to display no error message, but to continue running.
+    Inquire : tells the command to display a prompt asking the user what to do.
+    Stop : tells the command to treat the error as terminating and to stop running.
+    #>
 }
 
 function StartupMessage {
     # Write a startup message
     # Get the name of the script
     $ScriptName = $($myInvocation.ScriptName).Split("\") | Select-Object -Last 1
-
     Write-Host -Object "=================================================="
     Write-Host -Object "Startup : $ScriptName" 
     Write-Host -Object "=================================================="    
@@ -71,6 +84,25 @@ function VerifyTempFolder {
         Exit
     }
 }
+
+function VerifyNbDaysDeleteCSVReport {
+    # Check if $NbDaysDeleteCSVReport is valid
+    Write-Host -Object 'Checking if $NbDaysDeleteCSVReport is valid : ' -NoNewline
+    If ($null -eq $NbDaysDeleteCSVReport) {
+        Write-Host -Object 'Error ! The variable $NbDaysDeleteCSVReport is empty or null. Please, enter a valid number less than "1" exemple "0" or "-1" and try agin.' -ForegroundColor Red
+        Write-Host -Object "Exit the script in 10 seconds..." -NoNewline
+        Start-Sleep -Seconds 10
+        Exit
+    } elseif ($NbDaysDeleteCSVReport -ige 1) {
+        Write-Host -Object 'Error ! The variable $NbDaysDeleteCSVReport has not a valid number. Please, enter a valid number less than "1" exemple "0" or "-1" and try agin.' -ForegroundColor Red
+        Write-Host -Object "Exit the script in 10 seconds..." -NoNewline
+        Start-Sleep -Seconds 10
+        Exit
+    } else {
+        Write-Host -Object "The number `"$NbDaysDeleteCSVReport`" is valid." -ForegroundColor Green
+    }
+}
+
 
 function VerifyFolderToCheck {
     # Checking if $FolderToCheck is valid and correct rewriting
@@ -128,7 +160,7 @@ function AreNotTheSame {
             $ContinueAsTheSame = Read-Host -Prompt 'Do you want to continue without changing variables (yes,no) ? '
             switch ($ContinueAsTheSame.ToLower()) {
                 "yes" { 
-                    Write-Host -Object "No problem, we continue..." -ForegroundColor Green
+                    Continue
                 }
                 "no" { 
                     Write-Host -Object 'So please, enter a different valid absolute path for variables "$FolderToCheck" and "$TempFolder". You can retry after that.' -ForegroundColor Red
@@ -145,37 +177,59 @@ function AreNotTheSame {
 }
 
 function GetListOfFiles {
+    Write-Host -Object "Getting the list of new files : " -NoNewline
+
     # Create the date variable
     $Script:Date = (Get-Date).AddDays($NbDays)
+    
     # Create a list of all files
     $Script:ListOfAllFiles = Get-ChildItem -Path $Script:FolderToCheck -Recurse -File | Where-Object {$_.CreationTime -ge $Script:Date} | Sort-Object -Property Name
+    
     # Check if there are any files
     If ($null -eq $Script:ListOfAllFiles) {
-        # no new file, so exit the script
+        # No new file, so exit the script
         Write-Host -Object "No new file since $Script:Date." -ForegroundColor Red
         Write-Host -Object "Exit the script in 10 seconds..." -NoNewline
         Start-Sleep -Seconds 10
         Exit
     } else {
-        # Display list of all files
+        # Display the number of new files in the command prompt
         $Script:NbListOfFiles = $Script:ListOfAllFiles | Measure-Object | Select-Object -ExpandProperty Count
         Write-Host -Object "$Script:NbListOfFiles new files since $Script:Date." -ForegroundColor Green
-        Foreach ($Script:Files in $Script:ListOfAllFiles) {
-            Write-Host -Object "$Script:Files"
-        }
+        
+        # Display list of all files in the command prompt
+        #Foreach ($Script:Files in $Script:ListOfAllFiles) {
+        #    Write-Host -Object "$Script:Files"
+        #}
     }
 }
 
 function CreateCSV {
+    # Set variables
     [String]$Script:DateFormat = Get-Date -UFormat %Y-%m-%d # Can be change by : %F
     [String]$Script:TimeFormat = Get-Date -UFormat %H-%M
-    [String]$Script:FilenameCSV = $Script:DateFormat + "_" + $Script:TimeFormat + "_NewFilesDailyReport.csv"
+    [String]$Script:FilenameCSV = $Script:DateFormat + "_" + $Script:TimeFormat + "_" + $Script:NameCSV + ".csv"
     [String]$Script:FullPathFileCSV = $Script:TempFolder + $Script:FilenameCSV
-    $Script:ListOfAllFiles = Get-ChildItem -Path $Script:FolderToCheck -Recurse -File | Where-Object {$_.CreationTime -ge $Date} | Select-Object -Property Name,Directory,FullName,CreationTime | Sort-Object -Property Name | Export-Csv -Encoding utf8 -Delimiter ";" -Path $Script:FullPathFileCSV
+
+    # Create the CSV report
+    Write-Host -Object "Create the CSV report file : " -NoNewline
+
+    # Test if the file alreday existe
+    If (Test-Path -Path $FullPathFileCSV) {
+        Write-Host -Object "The CSV report file `"$FullPathFileCSV`" already exists. Please, try again later." -ForegroundColor Red
+        Write-Host -Object "Exit the script in 10 seconds..." -NoNewline
+        Start-Sleep -Seconds 10
+        Exit
+    } else {
+        $Script:ListOfAllFiles = Get-ChildItem -Path $Script:FolderToCheck -Recurse -File | Where-Object {$_.CreationTime -ge $Date} | Select-Object -Property Name,Directory,FullName,CreationTime | Sort-Object -Property Name | Export-Csv -Encoding utf8 -Delimiter ";" -Path $Script:FullPathFileCSV       
+        Write-Host -Object "The CSV report was created : $FullPathFileCSV" -ForegroundColor Green
+    }
 }
 
-function SendMail {
-    $Subject = "[Daily report] You have $NbListOfFiles new files since $Date"
+function SendEmail {
+    Write-Host -Object "Sending email : " -NoNewline
+
+    $Subject = "[Report] You have $NbListOfFiles new files since $Date"
     $Body = "Hello, you will find a file in CSV format attached to this mail, which contains the list of $NbListOfFiles new files since $Date"
     $Attachments = $FullPathFileCSV
 
@@ -192,6 +246,43 @@ function SendMail {
     $Smtp.EnableSSL = $true
     $Smtp.Credentials = New-Object System.Net.NetworkCredential($SmtpUser, $SmtpPassword);
     $Smtp.Send($Mail);
+
+    # Check if the message has been sent successfully
+    if ($?) {
+        Write-Host -Object "Email sent." -ForegroundColor Green
+    } else {
+        Write-Host -Object "Email error ! Please verify the configuration of the email user, password and server. You can retry after that." -ForegroundColor Red
+        Write-Host -Object "Exit the script in 10 seconds..." -NoNewline
+        Start-Sleep -Seconds 10
+        Exit
+    }
+}
+
+function DeleteCSV {
+    # Delete old CSV report
+    $DateToDelete = $((Get-Date).AddDays($NbDaysDeleteCSVReport))
+    Write-Host -Object "Delete old CSV report files since $DateToDelete : " -NoNewline
+    $NumberOfOldCSVFile = Get-ChildItem -Path $TempFolder -Filter "*$NameCSV.csv" -File  | Where-Object { $_.LastWriteTime -lt $DateToDelete } | Measure-Object | Select-Object -ExpandProperty Count
+    Get-ChildItem -Path $TempFolder -Filter "*$NameCSV.csv" -File  | Where-Object { $_.LastWriteTime -lt $DateToDelete } | Remove-Item
+
+    # Check if the delete has been execute successfully
+    if ($?) {
+        Write-Host -Object "$NumberOfOldCSVFile old files has been deleted." -ForegroundColor Green
+    } else {
+        Write-Host -Object 'Email error ! Please verify the configuration of $NbDaysDeleteCSVReport variable. You can retry after that.' -ForegroundColor Red
+        Write-Host -Object "Exit the script in 10 seconds..." -NoNewline
+        Start-Sleep -Seconds 10
+        Exit
+    }
+}
+
+function EndMessage {
+    # Write an end message
+    # Get the name of the script
+    $ScriptName = $($myInvocation.ScriptName).Split("\") | Select-Object -Last 1
+    Write-Host -Object "=================================================="
+    Write-Host -Object "End of the script : $ScriptName" 
+    Write-Host -Object "=================================================="
 }
 
 function Main {
@@ -203,6 +294,7 @@ function Main {
 
     # Verification of variables
     VerifyTempFolder
+    VerifyNbDaysDeleteCSVReport
     VerifyFolderToCheck
     VerifyNbDays
     AreNotTheSame
@@ -210,17 +302,17 @@ function Main {
     # Creating the list
     GetListOfFiles
 
-    # Verification of new file
-    #VerifyIfNewFiles
-
     # Creating the report in CSV
-    #CreateCSV #Verify after creating the csv
+    CreateCSV
 
     # Send the email
-    #SendMail # Check value
+    SendEmail
 
     # Delete temp CSV files
-    #DeleteCSV
+    DeleteCSV
+
+    # End message
+    EndMessage
 }
 
 # Run the script

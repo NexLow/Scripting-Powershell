@@ -2,8 +2,8 @@
 .SYNOPSIS
 Notifies by email the list of modified files since X days.
 .DESCRIPTION
-WIP 
-A mettre sur le script où sont les fichiers à check
+This script can work automatically with a scheduled task if it is correctly configured. Please test this script before use or automate.
+This script does not work with network paths. An absolute local path must be entered for variables $TempFolder and $FolderToCheck.
 .NOTES
 This script was created by NexLow : https://github.com/NexLow
 #>
@@ -11,12 +11,13 @@ This script was created by NexLow : https://github.com/NexLow
 function SettingUpVariables {
     # This is where you need to modify the variables for the script.
 
+    # The path of a temporary folder. It is used to create de CSV report.
+    [String]$Script:TempFolder = "C:\Temp"
     # The folder you want to check.
     [String]$Script:FolderToCheck = "C:\Temp"
     # Lists the files modified since X days
     [Int]$Script:NbDays = "-1"
-    # The path of a temporary folder. It is used to create de CSV report.
-    [String]$Script:TempFolder = "C:\Temp"
+    
 
     # Server mail configuration
     [String]$Script:SmtpUser = "" # Your email address like : your@address.com

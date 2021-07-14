@@ -5,7 +5,7 @@ Backup the folder you want with the date in zip format.
 This script can work automatically with a scheduled task if it is correctly configured. Please test this script before use or automate.
 This script does not work with network paths. An absolute local path must be entered for variables $FolderToBackup and $BackupDestination.
 .NOTES
-Author : This script was created by NexLow : https://github.com/NexLow
+Author : This script was created by thibaultcholet : https://github.com/thibaultcholet
 Creation date : 2020-07-22
 Latest review : 2020-07-26
 Version : V1.0.0
